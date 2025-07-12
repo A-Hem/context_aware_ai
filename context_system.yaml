@@ -1,0 +1,62 @@
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  password: null
+  socket_timeout: 5.0
+  connection_pool_kwargs:
+    max_connections: 20
+    retry_on_timeout: true
+
+knowledge_management:
+  max_knowledge_items: 10000
+  cleanup_interval_hours: 24
+  min_relevance_score: 0.3
+  max_context_items_per_query: 5
+  knowledge_retention_days: 30
+
+context_analysis:
+  analyzer_model: "llama3.2:3b"
+  min_confidence_threshold: 0.7
+  max_analysis_length: 1000
+  topic_extraction_prompt": """
+    Extract 3-5 key topics from this text as single words or short phrases.
+    Focus on the main themes and concepts.
+    
+    Text: {text}
+    
+    Topics (comma-separated):
+    """
+
+agents:
+  weather_specialist:
+    model_name: "weather-context-aware"
+    base_model: "llama3.2:3b"
+    specialization: "weather"
+    system_prompt": "You are a weather specialist with access to shared knowledge from other AI agents."
+    context_injection_enabled: true
+    learning_enabled: true
+    max_context_items: 5
+  
+  tech_specialist:
+    model_name: "tech-context-aware"
+    base_model: "llama3.2:3b"
+    specialization: "technology"
+    system_prompt: "You are a technology specialist with access to shared knowledge from other AI agents."
+    context_injection_enabled: true
+    learning_enabled: true
+    max_context_items: 5
+  
+  context_analyzer:
+    model_name: "llama3.2:3b"
+    role: "analyzer"
+    system_prompt: "You analyze text to extract topics, entities, and insights."
+    context_injection_enabled: false
+    learning_enabled: false
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/context_system.log"
+  max_bytes": 10485760
+  backup_count": 5
