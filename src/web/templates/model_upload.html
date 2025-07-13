@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Model - AI Agent Manager{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Upload Model</h1>
+                <p class="mt-2 text-gray-600">Create a new Ollama model from a Modelfile</p>
+            </div>
+            <a href="/models" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Models
+            </a>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="bg-white shadow rounded-lg">
+        <form method="POST" action="/models/upload" class="space-y-6 p-6">
+            <!-- Basic Information -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Model Information</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Model Name</label>
+                        <input type="text" name="name" id="name" 
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                               placeholder="e.g., my-custom-model"
+                               required>
+                        <p class="mt-1 text-sm text-gray-500">Use lowercase with hyphens (e.g., my-custom-model)</p>
+                    </div>
+
+                    <div>
+                        <label for="base_model" class="block text-sm font-medium text-gray-700">Base Model</label>
+                        <select name="base_model" id="base_model" 
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                required>
+                            <option value="">Select a base model</option>
+                            <option value="llama3.2:3b">llama3.2:3b</option>
+                            <option value="llama3.2:7b">llama3.2:7b</option>
+                            <option value="llama3.2:13b">llama3.2:13b</option>
+                            <option value="llama3.2:70b">llama3.2:70b</option>
+                            <option value="mistral:7b">mistral:7b</option>
+                            <option value="codellama:7b">codellama:7b</option>
+                            <option value="custom">Custom (specify in Modelfile)</option>
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500">The underlying LLM model</p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              placeholder="Brief description of what this model does..."
+                              required></textarea>
+                    <p class="mt-1 text-sm text-gray-500">Describe the model's purpose and capabilities</p>
+                </div>
+            </div>
+
+            <!-- Modelfile Content -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Modelfile Content</h3>
+                
+                <div>
+                    <label for="modelfile_content" class="block text-sm font-medium text-gray-700">Modelfile</label>
+                    <textarea name="modelfile_content" id="modelfile_content" rows="15"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono text-sm"
+                              placeholder="# Example Modelfile&#10;FROM llama3.2:3b&#10;&#10;SYSTEM You are a helpful AI assistant.&#10;&#10;TEMPLATE {{ .Prompt }}&#10;&#10;PARAMETER temperature 0.7&#10;PARAMETER top_p 0.9&#10;PARAMETER top_k 40"
+                              required></textarea>
+                    <p class="mt-1 text-sm text-gray-500">Enter the complete Modelfile content</p>
+                </div>
+
+                <!-- Modelfile Template -->
+                <div class="mt-4">
+                    <button type="button" onclick="loadTemplate()" 
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Load Template
+                    </button>
+                </div>
+            </div>
+
+            <!-- Validation -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Validation</h3>
+                
+                <div id="validationResults" class="space-y-3">
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-sm text-gray-500">Modelfile syntax will be validated on upload</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3">
+                <a href="/models" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    Upload Model
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-blue-900 mb-4">Creating Modelfiles</h3>
+        <div class="space-y-3 text-sm text-blue-800">
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>FROM:</strong> Specify the base model (e.g., llama3.2:3b, mistral:7b)</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>SYSTEM:</strong> Define the model's role and behavior</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-4 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>TEMPLATE:</strong> Define the prompt format (use {{ .Prompt }} for user input)</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>PARAMETER:</strong> Set generation parameters (temperature, top_p, etc.)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Modelfiles -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Example Modelfiles</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-lg p-4 border">
+                <h4 class="font-medium text-gray-900 mb-2">Basic Assistant</h4>
+                <pre class="text-xs text-gray-600 bg-gray-50 p-2 rounded">FROM llama3.2:3b
+
+SYSTEM You are a helpful AI assistant.
+
+TEMPLATE {{ .Prompt }}
+
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9</pre>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 border">
+                <h4 class="font-medium text-gray-900 mb-2">Context-Aware Agent</h4>
+                <pre class="text-xs text-gray-600 bg-gray-50 p-2 rounded">FROM llama3.2:7b
+
+SYSTEM You are a context-aware AI agent with access to shared knowledge from other agents.
+
+TEMPLATE Shared Knowledge: {{ .SharedKnowledge }}
+
+User Query: {{ .Prompt }}
+
+PARAMETER temperature 0.8
+PARAMETER top_p 0.95</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const nameInput = document.getElementById('name');
+        const modelfileInput = document.getElementById('modelfile_content');
+        
+        // Validate model name format
+        nameInput.addEventListener('input', function() {
+            const value = this.value;
+            const isValid = /^[a-z][a-z0-9-]*$/.test(value);
+            
+            if (value && !isValid) {
+                this.setCustomValidity('Model name must be lowercase with only letters, numbers, and hyphens');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Basic Modelfile validation
+        modelfileInput.addEventListener('input', function() {
+            const content = this.value;
+            const hasFrom = content.includes('FROM ');
+            const hasSystem = content.includes('SYSTEM ');
+            const hasTemplate = content.includes('TEMPLATE ');
+            
+            updateValidation(hasFrom, hasSystem, hasTemplate);
+        });
+        
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                showNotification('Please fix the errors in the form', 'error');
+            }
+        });
+    });
+    
+    function updateValidation(hasFrom, hasSystem, hasTemplate) {
+        const validationDiv = document.getElementById('validationResults');
+        
+        let html = '';
+        
+        // FROM validation
+        html += `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 ${hasFrom ? 'text-green-500' : 'text-red-500'} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${hasFrom ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 'M6 18L18 6M6 6l12 12'}"></path>
+                </svg>
+                <span class="text-sm ${hasFrom ? 'text-green-700' : 'text-red-700'}">FROM directive ${hasFrom ? 'found' : 'missing'}</span>
+            </div>
+        `;
+        
+        // SYSTEM validation
+        html += `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 ${hasSystem ? 'text-green-500' : 'text-yellow-500'} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${hasSystem ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'}"></path>
+                </svg>
+                <span class="text-sm ${hasSystem ? 'text-green-700' : 'text-yellow-700'}">SYSTEM directive ${hasSystem ? 'found' : 'recommended'}</span>
+            </div>
+        `;
+        
+        // TEMPLATE validation
+        html += `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 ${hasTemplate ? 'text-green-500' : 'text-yellow-500'} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${hasTemplate ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' : 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'}"></path>
+                </svg>
+                <span class="text-sm ${hasTemplate ? 'text-green-700' : 'text-yellow-700'}">TEMPLATE directive ${hasTemplate ? 'found' : 'recommended'}</span>
+            </div>
+        `;
+        
+        validationDiv.innerHTML = html;
+    }
+    
+    function loadTemplate() {
+        const template = `# Context-Aware AI Agent Modelfile
+FROM llama3.2:3b
+
+SYSTEM You are a context-aware AI agent with access to shared knowledge from other AI agents. Use this knowledge to provide more informed and comprehensive responses.
+
+TEMPLATE Shared Knowledge: {{ .SharedKnowledge }}
+
+User Query: {{ .Prompt }}
+
+Please respond based on the shared knowledge and your own capabilities. If the shared knowledge is relevant, incorporate it into your response. If not, rely on your base knowledge.
+
+PARAMETER temperature 0.8
+PARAMETER top_p 0.95
+PARAMETER top_k 40
+PARAMETER repeat_penalty 1.1`;
+
+        document.getElementById('modelfile_content').value = template;
+        document.getElementById('name').value = 'context-aware-agent';
+        document.getElementById('description').value = 'A context-aware AI agent that can access and use shared knowledge from other agents';
+        
+        // Trigger validation
+        document.getElementById('modelfile_content').dispatchEvent(new Event('input'));
+    }
+</script>
+{% endblock %} 

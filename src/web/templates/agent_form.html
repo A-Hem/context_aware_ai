@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}{{ "Edit" if agent else "Create" }} Agent - AI Agent Manager{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ "Edit" if agent else "Create" }} Agent</h1>
+                <p class="mt-2 text-gray-600">{{ "Modify" if agent else "Configure" }} your context-aware AI agent</p>
+            </div>
+            <a href="/agents" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Agents
+            </a>
+        </div>
+    </div>
+
+    <!-- Agent Form -->
+    <div class="bg-white shadow rounded-lg">
+        <form method="POST" action="{{ '/agents/' + agent_name + '/update' if agent else '/agents/create' }}" class="space-y-6 p-6">
+            <!-- Basic Information -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Agent Name</label>
+                        <input type="text" name="name" id="name" 
+                               value="{{ agent_name if agent else '' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                               placeholder="e.g., weather_specialist"
+                               {{ "readonly" if agent else "" }}
+                               required>
+                        <p class="mt-1 text-sm text-gray-500">Use lowercase with underscores (e.g., weather_specialist)</p>
+                    </div>
+
+                    <div>
+                        <label for="model_name" class="block text-sm font-medium text-gray-700">Model Name</label>
+                        <input type="text" name="model_name" id="model_name" 
+                               value="{{ agent.model_name if agent else '' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                               placeholder="e.g., weather-context-aware"
+                               required>
+                        <p class="mt-1 text-sm text-gray-500">The Ollama model name for this agent</p>
+                    </div>
+
+                    <div>
+                        <label for="base_model" class="block text-sm font-medium text-gray-700">Base Model</label>
+                        <select name="base_model" id="base_model" 
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                required>
+                            <option value="">Select a base model</option>
+                            <option value="llama3.2:3b" {{ "selected" if agent and agent.base_model == "llama3.2:3b" else "" }}>llama3.2:3b</option>
+                            <option value="llama3.2:7b" {{ "selected" if agent and agent.base_model == "llama3.2:7b" else "" }}>llama3.2:7b</option>
+                            <option value="llama3.2:13b" {{ "selected" if agent and agent.base_model == "llama3.2:13b" else "" }}>llama3.2:13b</option>
+                            <option value="llama3.2:70b" {{ "selected" if agent and agent.base_model == "llama3.2:70b" else "" }}>llama3.2:70b</option>
+                            <option value="mistral:7b" {{ "selected" if agent and agent.base_model == "mistral:7b" else "" }}>mistral:7b</option>
+                            <option value="codellama:7b" {{ "selected" if agent and agent.base_model == "codellama:7b" else "" }}>codellama:7b</option>
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500">The underlying LLM model</p>
+                    </div>
+
+                    <div>
+                        <label for="specialization" class="block text-sm font-medium text-gray-700">Specialization</label>
+                        <input type="text" name="specialization" id="specialization" 
+                               value="{{ agent.specialization if agent else '' }}"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                               placeholder="e.g., weather, technology, finance"
+                               required>
+                        <p class="mt-1 text-sm text-gray-500">The agent's area of expertise</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Prompt -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">System Prompt</h3>
+                <div>
+                    <label for="system_prompt" class="block text-sm font-medium text-gray-700">System Prompt</label>
+                    <textarea name="system_prompt" id="system_prompt" rows="6"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              placeholder="You are a specialized AI agent with access to shared knowledge from other AI agents..."
+                              required>{{ agent.system_prompt if agent else '' }}</textarea>
+                    <p class="mt-1 text-sm text-gray-500">Define the agent's role, capabilities, and behavior</p>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Features</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="context_injection_enabled" id="context_injection_enabled" 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                   {{ "checked" if not agent or agent.context_injection_enabled else "" }}>
+                        </div>
+                        <div class="ml-3">
+                            <label for="context_injection_enabled" class="text-sm font-medium text-gray-700">Context Injection</label>
+                            <p class="text-sm text-gray-500">Enable shared knowledge injection from other agents</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="learning_enabled" id="learning_enabled" 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                   {{ "checked" if not agent or agent.learning_enabled else "" }}>
+                        </div>
+                        <div class="ml-3">
+                            <label for="learning_enabled" class="text-sm font-medium text-gray-700">Learning</label>
+                            <p class="text-sm text-gray-500">Allow the agent to learn and share new insights</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label for="max_context_items" class="block text-sm font-medium text-gray-700">Max Context Items</label>
+                    <input type="number" name="max_context_items" id="max_context_items" 
+                           value="{{ agent.max_context_items if agent else 5 }}"
+                           min="1" max="20"
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           required>
+                    <p class="mt-1 text-sm text-gray-500">Maximum number of context items to inject (1-20)</p>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3">
+                <a href="/agents" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    {{ "Update" if agent else "Create" }} Agent
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-blue-900 mb-4">Creating Effective Agents</h3>
+        <div class="space-y-3 text-sm text-blue-800">
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>Specialization:</strong> Choose a specific domain (weather, technology, finance, etc.)</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>System Prompt:</strong> Clearly define the agent's role and how it should interact with shared knowledge</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>Context Injection:</strong> Enable this to allow agents to share knowledge with each other</p>
+            </div>
+            <div class="flex items-start">
+                <svg class="h-5 w-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p><strong>Learning:</strong> Enable this to allow the agent to learn from interactions and share insights</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const nameInput = document.getElementById('name');
+        
+        // Validate agent name format
+        nameInput.addEventListener('input', function() {
+            const value = this.value;
+            const isValid = /^[a-z][a-z0-9_]*$/.test(value);
+            
+            if (value && !isValid) {
+                this.setCustomValidity('Agent name must be lowercase with only letters, numbers, and underscores');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                showNotification('Please fix the errors in the form', 'error');
+            }
+        });
+    });
+</script>
+{% endblock %} 
