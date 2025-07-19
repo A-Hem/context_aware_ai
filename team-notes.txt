@@ -48,3 +48,16 @@
 # REMINDER:  
 - Always update this file after any major structure, dependency, or config change.
 - Document any issues, workarounds, or user preferences here for team continuity. 
+
+---
+2024- Python Orchestrator System Update
+
+- File: src/core/orchestrator.py
+- Purpose: Simplified orchestration system for managing agents (formerly workers) and tasks.
+- Agents: Register agent classes for different task types. Each agent handles its own tasks.
+- Usage: See example in orchestrator.py for registering agents and processing tasks.
+- No external dependencies or advanced features (dependency tracking, async, etc.) in this version.
+- Easy to extend: Add new agents by subclassing BaseAgent and registering with the orchestrator.
+
+This replaces the previous TypeScript orchestrator/worker system with a more Pythonic, maintainable approach.
+--- 
