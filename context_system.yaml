@@ -24,9 +24,8 @@ context_analysis:
     Focus on the main themes and concepts.
     
     Text: {text}
-    
-    Topics (comma-separated):
-    """
+
+    Topics (comma-separated):; {topics}   
 
 agents:
   weather_specialist:
